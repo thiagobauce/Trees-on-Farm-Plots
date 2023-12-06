@@ -1,0 +1,15 @@
+FROM nvidia/cuda:11.6.1-cudnn8-devel-ubuntu20.04 AS cuda_machine
+
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpq-dev \
+    libpng-dev \
+    libonig-dev \
+    libmcrypt-dev \
+    libxml2-dev 
+
+RUN apt-get install -y \
+    python >= 3.8
+
+COPY ../ .
