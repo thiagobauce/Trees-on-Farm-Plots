@@ -36,14 +36,11 @@ def main():
 
     diretorio_raiz=r'/bauce_ds/projeto/dataset/Arvores/Treino'
 
-    #diretorios = [os.path.join(diretorio_raiz, nome) 
-    #                for nome in os.listdir(diretorio_raiz) 
-    #                    if os.path.isdir(os.path.join(diretorio_raiz, nome))
-    #]
-    diretorios = ['/bauce_ds/projeto/dataset/Arvores/Treino/50141 - GLORIA', 
-    '/bauce_ds/projeto/dataset/Arvores/Treino/50448 - PROGRESSO', 
-    '/bauce_ds/projeto/dataset/Arvores/Treino/0229', 
-    '/bauce_ds/projeto/dataset/Arvores/Treino/0791']
+    diretorios = [os.path.join(diretorio_raiz, nome) 
+                    for nome in os.listdir(diretorio_raiz) 
+                        if os.path.isdir(os.path.join(diretorio_raiz, nome))
+    ]
+    #diretorios = []
 
     print(diretorios)
 
