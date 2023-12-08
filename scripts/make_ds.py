@@ -34,7 +34,7 @@ import argparse
 
 def main():
 
-    diretorio_raiz=r'/bauce_ds/projeto/dataset/Arvores/Treino'
+    diretorio_raiz=r'/bauce_ds/projeto/dataset/Arvores/Teste'
 
     diretorios = [os.path.join(diretorio_raiz, nome) 
                     for nome in os.listdir(diretorio_raiz) 
@@ -84,9 +84,9 @@ def main():
         arvores = read_file_shp(path_shp_arvores,ortofoto)
         mascara = read_file_shp(path_shp_mascara,ortofoto)
 
-        output_dataset_dir = os.path.join(diretorio_raiz, "dataset")
-        path_out_dataset_label = os.path.join(diretorio_raiz, "dataset/label")
-        path_out_dataset_rgb = os.path.join(diretorio_raiz, "dataset/rgb")
+        output_dataset_dir = os.path.join(diretorio_raiz, "teste")
+        path_out_dataset_label = os.path.join(diretorio_raiz, "teste/label")
+        path_out_dataset_rgb = os.path.join(diretorio_raiz, "teste/rgb")
 
         patch_size = [256, 512, 1024, 2048, 4096]
         step = [128, 256, 512, 1024, 2048]
