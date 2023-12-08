@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'ADE20KDataset'
-data_root = '/bauce_ds/projeto/dataset/Arvores/Treino/dataset'
+data_root = '/bauce_ds/projeto/dataset/data'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 crop_size = (512, 512)
@@ -37,18 +37,18 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='rgb/512',
-        ann_dir='label/512',
+        img_dir='treino/rgb/512',
+        ann_dir='treino/label/512',
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='images/validation',
-        ann_dir='annotations/validation',
+        img_dir='val/rgb/512',
+        ann_dir='val/label/512',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='images/validation',
-        ann_dir='annotations/validation',
+        img_dir='teste/rgb/512',
+        ann_dir='teste/label/512',
         pipeline=test_pipeline))

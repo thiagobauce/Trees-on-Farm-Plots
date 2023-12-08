@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'CityscapesDataset'
-data_root = '/bauce_ds/projeto/dataset/Arvores/Treino/dataset'
+data_root = '/bauce_ds/projeto/dataset/data'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 crop_size = (1024, 1024)
@@ -37,18 +37,18 @@ data = dict(
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='rgb/1024',
-        ann_dir='label/1024',
+        img_dir='treino/rgb/1024',
+        ann_dir='treino/label/1024',
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='leftImg8bit/val',
-        ann_dir='gtFine/val',
+        img_dir='val/rgb/1024',
+        ann_dir='val/label/1024',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='leftImg8bit/val',
-        ann_dir='gtFine/val',
+        img_dir='teste/rgb/1024',
+        ann_dir='teste/label/1024',
         pipeline=test_pipeline))

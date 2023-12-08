@@ -4,7 +4,7 @@ _base_ = [
 ]
 
 model = dict(
-    pretrained='/bauce_ds/projeto/mmsegmentation-master/pretrain/mit_b0_512x512.pth', decode_head=dict(num_classes=3))
+    pretrained='/bauce_ds/projeto/mmsegmentation-master/pretrain/mit-b0_512x512.pth', decode_head=dict(num_classes=3))
 
 # optimizer
 optimizer = dict(

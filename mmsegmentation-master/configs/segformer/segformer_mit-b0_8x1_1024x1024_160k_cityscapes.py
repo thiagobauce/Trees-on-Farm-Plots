@@ -6,7 +6,7 @@ _base_ = [
 
 model = dict(
     backbone=dict(
-        init_cfg=dict(type='Pretrained', checkpoint='pretrain/mit_b0_1024.pth')),
+        init_cfg=dict(type='Pretrained', checkpoint='/bauce_ds/projeto/mmsegmentation-master/pretrain/mit-b0_1024x1024.pth')),
     test_cfg=dict(mode='slide', crop_size=(1024, 1024), stride=(768, 768)))
 
 # optimizer
