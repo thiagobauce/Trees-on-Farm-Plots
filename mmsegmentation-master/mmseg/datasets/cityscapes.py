@@ -23,8 +23,8 @@ class CityscapesDataset(CustomDataset):
     PALETTE = [[128, 64, 128], [244, 35, 232]]
 
     def __init__(self,
-                 img_suffix='jpg',
-                 seg_map_suffix='png',
+                 img_suffix='.jpg',
+                 seg_map_suffix='.png',
                  **kwargs):
         super(CityscapesDataset, self).__init__(
             img_suffix=img_suffix, seg_map_suffix=seg_map_suffix, **kwargs)

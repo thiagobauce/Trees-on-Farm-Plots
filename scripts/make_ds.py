@@ -34,13 +34,18 @@ import argparse
 
 def main():
 
-    diretorio_raiz=r'/bauce_ds/projeto/dataset/Arvores/Teste'
+    diretorio_raiz=r'/bauce_ds/projeto/dataset/Arvores/Validacao'
 
     diretorios = [os.path.join(diretorio_raiz, nome) 
                     for nome in os.listdir(diretorio_raiz) 
                         if os.path.isdir(os.path.join(diretorio_raiz, nome))
     ]
-    #diretorios = []
+    diretorios = ['/bauce_ds/projeto/dataset/Arvores/Validacao/1148', 
+     '/bauce_ds/projeto/dataset/Arvores/Validacao/0078', 
+     '/bauce_ds/projeto/dataset/Arvores/Validacao/0151', 
+     '/bauce_ds/projeto/dataset/Arvores/Validacao/50191 - GIRASSOL', 
+     '/bauce_ds/projeto/dataset/Arvores/Validacao/10008 - EROSÃO', 
+     '/bauce_ds/projeto/dataset/Arvores/Validacao/0659']
 
     print(diretorios)
 
@@ -84,9 +89,9 @@ def main():
         arvores = read_file_shp(path_shp_arvores,ortofoto)
         mascara = read_file_shp(path_shp_mascara,ortofoto)
 
-        output_dataset_dir = os.path.join(diretorio_raiz, "teste")
-        path_out_dataset_label = os.path.join(diretorio_raiz, "teste/label")
-        path_out_dataset_rgb = os.path.join(diretorio_raiz, "teste/rgb")
+        output_dataset_dir = os.path.join(diretorio_raiz, "val")
+        path_out_dataset_label = os.path.join(diretorio_raiz, "val/label")
+        path_out_dataset_rgb = os.path.join(diretorio_raiz, "val/rgb")
 
         patch_size = [256, 512, 1024, 2048, 4096]
         step = [128, 256, 512, 1024, 2048]
