@@ -1,5 +1,7 @@
 #ignore all logs
 *.log
-
+*.txt
+*.pth
 #ignore tif photos
 /dataset
+/imgs_infer
