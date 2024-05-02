@@ -1,5 +1,4 @@
 """
-
 The files are dispostos in directories inside others train and test.
 Each shape is named following the standard:
 *dirname_talhoes.shp
@@ -9,14 +8,14 @@ Each shape is named following the standard:
 
 Following this standard we could split easily to read the shapefiles.
 
-Os arquivos estão dispostos em diretórios dentro de treino e teste.
-Cada camada da ortofoto está nomeada da seguinte maneira:
+Os arquivos estÃ£o dispostos em diretÃ³rios dentro de treino e teste.
+Cada camada da ortofoto estÃ¡ nomeada da seguinte maneira:
 *nome_da_pasta_talhoes.shp
 *nome_da_pasta_arvores.shp
 *nome_da_pasta_mask.shp
 *nome_da_pasta.tif
 
-Conseguimos facilitar o split dos nomes dos arquivos obedecendo esse padrão, para ler
+Conseguimos facilitar o split dos nomes dos arquivos obedecendo esse padrÃ£o, para ler
 os shapefiles.
 """
 
@@ -26,55 +25,33 @@ import cv2
 import rasterio
 import geopandas
 from PIL import Image
+import argparse
+import sys
+
+
+#ativar o venv
+#source /home/wesley/Documentos/Alessandro/mmseg/venv_mmseg/bin/activate
 
 def main():
 
-    diretorio_raiz=r'Q:/Arvores/Treino'
+    diretorio_raiz=r'/home/guatambu/bauce_ds/projeto/dataset/Arvores/Treino'
 
     diretorios = [os.path.join(diretorio_raiz, nome) 
                     for nome in os.listdir(diretorio_raiz) 
                         if os.path.isdir(os.path.join(diretorio_raiz, nome))
-                    ]
-    #TREINO
-    #diretorios = ['Q:/Arvores/Treino\\0085', 'Q:/Arvores/Treino\\0229', 'Q:/Arvores/Treino\\0651', 
-                  #'Q:/Arvores/Treino\\0680', 'Q:/Arvores/Treino\\0746', 'Q:/Arvores/Treino\\0772', 
-                  #'Q:/Arvores/Treino\\0781-13-14-15', 'Q:/Arvores/Treino\\0781-TH-6-7-8-9-10', 'Q:/Arvores/Treino\\0791', 
-                  #'Q:/Arvores/Treino\\10101 - ARUEIRA', 'Q:/Arvores/Treino\\10605 - CUBATAO', 
-                  #'Q:/Arvores/Treino\\10613 - SANTO ANTONIO DA LIBERDADE', gd
-                  #'Q:/Arvores/Treino\\1133', 
-                  #'Q:/Arvores/Treino\\2014-2015', 'Q:/Arvores/Treino\\30443 - SANTA RITA', 'Q:/Arvores/Treino\\30452 - SÃO JOSÉ', 
-                  #'Q:/Arvores/Treino\\30768 - CASA DA PEDRA', 'Q:/Arvores/Treino\\30774 - N SRA APARECIDA', 
-                  #'Q:/Arvores/Treino\\30812 - SÃO SEBASTIÃO', 'Q:/Arvores/Treino\\30990 - BARRINHA', 
-                  #'Q:/Arvores/Treino\\40228 - SANTA HELENA', 'Q:/Arvores/Treino\\40491 - FUNDÃO', 
-                  #'Q:/Arvores/Treino\\40520 - MALHADOURO', 'Q:/Arvores/Treino\\50010 - FLORESTA', 
-                  #'Q:/Arvores/Treino\\50124 - SANTA MARINA', gd 
-                  #'Q:/Arvores/Treino\\50141 - GLORIA', gd
-                  #'Q:/Arvores/Treino\\50442 - MGA', 'Q:/Arvores/Treino\\50448 - PROGRESSO', 
-                  #'Q:/Arvores/Treino\\50581 - MOLECADA', 'Q:/Arvores/Treino\\50710 - BOA ESPERANÇA']
-    #TESTE
-    #diretorios = ['Q:/Arvores/Teste\\0151', 'Q:/Arvores/Teste\\0221', 'Q:/Arvores/Teste\\0738', 
-                  #'Q:/Arvores/Teste\\2048', 'Q:/Arvores/Teste\\30219 - SÃO JORGE', 
-                  #'Q:/Arvores/Teste\\50141 - GLORIA', 
-                  #'Q:/Arvores/Teste\\50696 - SANTO ANTONIO CAMINHANTE']
-    
-    #VALIDACAO
-    #diretorios = #['Q:/Arvores/Validacao\\0078', 'Q:/Arvores/Validacao\\0151', 'Q:/Arvores/Validacao\\0659', 
-                  #'Q:/Arvores/Validacao\\10008 - EROSÃO', 
-                  #'Q:/Arvores/Validacao\\1148', 
-                  #'Q:/Arvores/Validacao\\30438 - AROEIRAS', 
-                  #'Q:/Arvores/Validacao\\50191 - GIRASSOL']
+    ]
 
     print(diretorios)
 
     for diretorio in diretorios:
-        # Listar os arquivos no diretório atual
         arquivos = os.listdir(diretorio)
 
-        # Inicializar variáveis para armazenar os caminhos dos arquivos
         path_shp_talhoes = ''
         path_shp_arvores = ''
         path_shp_mascara = ''
         path_tif = ''
+
+        np.set_printoptions(threshold=sys.maxsize)
 
         for arquivo in arquivos:
             if arquivo.endswith('.shp'):
@@ -104,49 +81,39 @@ def main():
         #print('Largura e Altura: ', (width, height))
         #print('Num de canais: ', n)
 
-        talhoes = read_file_shp(path_shp_talhoes,ortofoto)
+        #talhoes = read_file_shp(path_shp_talhoes,ortofoto)
         arvores = read_file_shp(path_shp_arvores,ortofoto)
         mascara = read_file_shp(path_shp_mascara,ortofoto)
 
-        output_arvores_dir = os.path.join(diretorio_raiz, "arvores")
-        output_talhoes_dir = os.path.join(diretorio_raiz, "talhoes")
-        os.makedirs(output_arvores_dir, exist_ok=True)
-        os.makedirs(output_talhoes_dir, exist_ok=True)
-
-        path_out_tree_label = os.path.join(diretorio_raiz, "arvores/arvores_label")
-        path_out_tree_rgb = os.path.join(diretorio_raiz, "arvores/arvores_rgb")
-        path_out_talhoes_label = os.path.join(diretorio_raiz, "talhoes/talhoes_label")
-        path_out_talhoes_rgb = os.path.join(diretorio_raiz, "talhoes/talhoes_rgb")
+        output_dataset_dir = os.path.join(diretorio_raiz, "treino")
+        path_out_dataset_label = os.path.join(diretorio_raiz, "treino/label")
+        path_out_dataset_rgb = os.path.join(diretorio_raiz, "treino/rgb")
 
         patch_size = [256, 512, 1024, 2048, 4096]
         step = [128, 256, 512, 1024, 2048]
 
         for size in patch_size:
-            os.makedirs(os.path.join(output_arvores_dir, f"arvores_rgb/{size}"), exist_ok=True)
-            os.makedirs(os.path.join(output_arvores_dir, f"arvores_label/{size}"), exist_ok=True)
-
-            os.makedirs(os.path.join(output_talhoes_dir, f"talhoes_rgb/{size}"), exist_ok=True)
-            os.makedirs(os.path.join(output_talhoes_dir, f"talhoes_label/{size}"), exist_ok=True)
-
-
+            os.makedirs(os.path.join(output_dataset_dir, f"label/{size}"), exist_ok=True)
+            os.makedirs(os.path.join(output_dataset_dir, f"rgb/{size}"), exist_ok=True)
+            
         r = ortofoto.read(1)
         g = ortofoto.read(2)
         b = ortofoto.read(3)
 
         label_mask = get_mask(width,height, func_latlon_xy,mascara)
         label_tree = get_tree(width,height, func_latlon_xy,arvores)
-        label_talhoes = get_talhoes(width,height, func_latlon_xy,talhoes)
+       #label_talhoes = get_talhoes(width,height, func_latlon_xy,talhoes)
 
         for p, s in zip(patch_size, step):
             print(p,s)
-            crop_imgs(width,height,path_out_tree_label, path_out_tree_rgb,
-                    r,g,b,p,s,label_tree,label_mask)
+            #crop_imgs(width,height,path_out_dataset_label, path_out_dataset_rgb,
+            #        r,g,b,p,s,label_tree,label_mask,label_talhoes, diretorio)
+            
+            crop_imgs(width,height,path_out_dataset_label, path_out_dataset_rgb,
+                    r,g,b,p,s,label_tree,label_mask,[0, 0, 0, 255, 0, 0])
 
-            crop_imgs(width,height,path_out_talhoes_label, path_out_talhoes_rgb,
-                    r,g,b,p,s,label_talhoes,label_mask)
-
-            #crop_imgs(width,height,path_out_tree_rel_label, path_out_tree_rel_rgb,
-            #        r,g,b,p,s,label_tree,label_talhoes)
+            #crop_imgs(width,height,path_out_talhoes_label, path_out_talhoes_rgb,
+            #        r,g,b,p,s,label_talhoes,label_mask,[0, 0, 0, 0, 0, 128])
 
 
 #this function read a tif file (ortofoto)
@@ -229,9 +196,15 @@ def get_talhoes(width, height, func_latlon_xy, shp):
 
     return label_talhoes
 
-#this function receive a width, height and rgb from tif file, the rgbs and labels paths, the size of crops ans steps to
+#this function receive a width, height and rgb from tif file, 
+#the rgbs and labels paths, the size of crops ans steps to
 #iou 
-def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, label, label_mask):
+def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, 
+            label_tree,label_mask, diretorio): #,label_talhoes,
+    
+    tam_nparray = patch_size*patch_size
+    print(tam_nparray)
+
     for x in range(0, height - patch_size, step):
         for y in range(0, width - patch_size, step):
 
@@ -244,25 +217,20 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, label,
             patch_g = g[x:x+patch_size, y:y+patch_size]
             patch_b = b[x:x+patch_size, y:y+patch_size]
         
-            patch_label = label[x:x+patch_size, y:y+patch_size]
+            patch_label = label_tree[x:x+patch_size, y:y+patch_size] #+ label_talhoes[x:x+patch_size, y:y+patch_size]
         
             patch_rgb = np.dstack([patch_r, patch_g, patch_b])
             patch_rgb[patch_mask == 0] = [0,0,0]
-        
-            filename_rgb = path_rgb + f'/{patch_size}/patch_{x}_{y}.jpg'
-            filename_label = path_label + f'/{patch_size}/patch_{x}_{y}.png'
-        
-            #Image.fromarray(patch_rgb).save(filename_rgb)
-            #img_label = Image.fromarray(patch_label)
-            #img_label.putpalette([0,0,0, 255,0,0])
-            #img_label.save(filename_label)
 
-            #more than 1 pixel in img patch
+            nome_camada, _ = os.path.splitext(diretorio)
+            #print(nome_camada)
+            partes = nome_camada.split('/')
+
+            filename_rgb = path_rgb + f'/{patch_size}/{partes[-1]}_patch_{x}_{y}.jpg'
+            filename_label = path_label + f'/{patch_size}/{partes[-1]}_patch_{x}_{y}.png'
+            
             if np.sum(patch_label) > 0:
                 Image.fromarray(patch_rgb).save(filename_rgb)
                 img_label = Image.fromarray(patch_label)
-                img_label.putpalette([0, 0, 0, 255, 0, 0])
+                img_label.putpalette([0,0,0, 255,0,0, 0,0,255])
                 img_label.save(filename_label)
-
-
-main()
