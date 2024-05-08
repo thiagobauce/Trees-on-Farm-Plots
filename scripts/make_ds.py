@@ -63,7 +63,7 @@ def main(args):
                 if 'talhoes' in partes:
                     path_shp_talhoes = os.path.join(diretorio, arquivo)
                     print(path_shp_talhoes)
-                elif 'formigueiros' in partes:
+                elif 'arvores' in partes:
                     path_shp_arvores = os.path.join(diretorio, arquivo)
                     print(path_shp_arvores)
                 elif 'mascara' in partes:
@@ -83,7 +83,7 @@ def main(args):
         #print('Largura e Altura: ', (width, height))
         #print('Num de canais: ', n)
 
-        #talhoes = read_file_shp(path_shp_talhoes,ortofoto)
+        talhoes = read_file_shp(path_shp_talhoes,ortofoto)
         arvores = read_file_shp(path_shp_arvores,ortofoto)
         mascara = read_file_shp(path_shp_mascara,ortofoto)
 
@@ -105,15 +105,15 @@ def main(args):
 
         label_mask = get_mask(width,height, func_latlon_xy,mascara)
         label_tree = get_tree(width,height, func_latlon_xy,arvores)
-        #label_talhoes = get_talhoes(width,height, func_latlon_xy,talhoes)
+        label_talhoes = get_talhoes(width,height, func_latlon_xy,talhoes)
 
         for p, s in zip(patch_size, step):
             print(p,s)
-            #crop_imgs(width,height,path_out_dataset_label, ,
-            #        r,g,b,p,s,label_tree,label_mask,label_talhoes, diretorio,pallete)
+            crop_imgs(width,height,path_out_dataset_label, path_out_dataset_rgb,
+                    r,g,b,p,s,label_tree,label_mask,label_talhoes, diretorio,pallete)
             
-            crop_imgs(width,height, path_out_dataset_label, path_out_dataset_rgb, 
-                      r,g,b,p, s, label_tree,label_mask,diretorio,pallete)
+            #crop_imgs(width,height,path_out_tree_label, path_out_tree_rgb,
+            #        r,g,b,p,s,label_tree,label_mask,[0, 0, 0, 128, 0, 0])
 
             #crop_imgs(width,height,path_out_talhoes_label, path_out_talhoes_rgb,
             #        r,g,b,p,s,label_talhoes,label_mask,[0, 0, 0, 0, 0, 128])
@@ -203,7 +203,7 @@ def get_talhoes(width, height, func_latlon_xy, shp):
 #the rgbs and labels paths, the size of crops ans steps to
 #iou 
 def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, 
-            label_tree,label_mask,diretorio,pallete):#label_talhoes, 
+            label_tree,label_mask,label_talhoes, diretorio,pallete):#, 
     
     tam_nparray = patch_size*patch_size
     print(tam_nparray)
@@ -220,7 +220,7 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step,
             patch_g = g[x:x+patch_size, y:y+patch_size]
             patch_b = b[x:x+patch_size, y:y+patch_size]
         
-            patch_label = label_tree[x:x+patch_size, y:y+patch_size] #+ label_talhoes[x:x+patch_size, y:y+patch_size]
+            patch_label = label_tree[x:x+patch_size, y:y+patch_size] + label_talhoes[x:x+patch_size, y:y+patch_size]
         
             patch_rgb = np.dstack([patch_r, patch_g, patch_b])
             patch_rgb[patch_mask == 0] = [0,0,0]
@@ -235,16 +235,17 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step,
             fore = np.sum(patch_label)
             
             #if(2 in patch_label): #theres more than 1 class (trees and talhoes)
-            Image.fromarray(patch_rgb).save(filename_rgb)
-            img_label = Image.fromarray(patch_label)
-            img_label.putpalette(pallete)
-            img_label.save(filename_label)
+            if((fore > 0)): 
+                Image.fromarray(patch_rgb).save(filename_rgb)
+                img_label = Image.fromarray(patch_label)
+                img_label.putpalette(pallete)
+                img_label.save(filename_label)
             #else: #just one or no classes on patch
-            #if ((fore > 0) and (fore < (tam_nparray-1))): #more than 1 pixel + and 1 - in img patch
-            #    Image.fromarray(patch_rgb).save(filename_rgb)
-            #    img_label = Image.fromarray(patch_label)
-            #    img_label.putpalette(pallete)
-            #    img_label.save(filename_label)
+            #    if ((fore > 0) and (fore < (tam_nparray-1))): #more than 1 pixel + and 1 - in img patch
+            #        Image.fromarray(patch_rgb).save(filename_rgb)
+            #        img_label = Image.fromarray(patch_label)
+            #        img_label.putpalette(pallete)
+            #        img_label.save(filename_label)
             
             
 
