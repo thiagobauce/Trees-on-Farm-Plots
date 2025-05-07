@@ -29,6 +29,9 @@ import argparse
 import sys
 
 
+#ativar o venv
+#source /home/wesley/Documentos/Alessandro/mmseg/venv_mmseg/bin/activate
+
 def main(args):
     config_module = __import__(args.config.replace('.py', ''))
     cfg = config_module.config
@@ -40,10 +43,11 @@ def main(args):
                         if os.path.isdir(os.path.join(diretorio_raiz, nome))
     ]
 
+    print(diretorios)
+
     for diretorio in diretorios:
         arquivos = os.listdir(diretorio)
 
-        path_shp_talhoes = ''
         path_shp_arvores = ''
         path_shp_mascara = ''
         path_tif = ''
@@ -55,13 +59,10 @@ def main(args):
                 nome_camada, _ = os.path.splitext(arquivo)
                 partes = nome_camada.split('_')
 
-                if 'talhoes' in partes:
-                    path_shp_talhoes = os.path.join(diretorio, arquivo)
-                    print(path_shp_talhoes)
-                elif 'arvores' in partes:
+                if 'arvores' in partes:
                     path_shp_arvores = os.path.join(diretorio, arquivo)
                     print(path_shp_arvores)
-                elif 'mascara' in partes:
+                elif 'mask' in partes:
                     path_shp_mascara = os.path.join(diretorio, arquivo)
                     print(path_shp_mascara)
 
@@ -78,7 +79,6 @@ def main(args):
         #print('Largura e Altura: ', (width, height))
         #print('Num de canais: ', n)
 
-        talhoes = read_file_shp(path_shp_talhoes,ortofoto)
         arvores = read_file_shp(path_shp_arvores,ortofoto)
         mascara = read_file_shp(path_shp_mascara,ortofoto)
 
@@ -98,14 +98,13 @@ def main(args):
         g = ortofoto.read(2)
         b = ortofoto.read(3)
 
-        label_mask = get_labels_coords(width,height, func_latlon_xy,mascara)
-        label_tree = get_labels_coords(width,height, func_latlon_xy,arvores)
-        label_talhoes = get_labels_coords(width,height, func_latlon_xy,talhoes)
+        label_mask = get_mask(width,height, func_latlon_xy,mascara)
+        label_tree = get_tree(width,height, func_latlon_xy,arvores)
 
         for p, s in zip(patch_size, step):
             print(p,s)
             crop_imgs(width,height,path_out_dataset_label, path_out_dataset_rgb,
-                    r,g,b,p,s,label_tree,label_mask,label_talhoes, diretorio,pallete)
+                    r,g,b,p,s,label_tree,label_mask, diretorio,pallete)
 
 
 #this function read a tif file (ortofoto)
@@ -117,9 +116,9 @@ def read_file_shp(path_shp,orto):
     shp = geopandas.read_file(path_shp)
     return shp.to_crs(orto.crs)
 
-#get the labels shp coords
-def get_labels_coords(width,height,func_latlon_xy,shp):
-    label = np.zeros((height, width), dtype=np.uint8)
+#get the tress coords
+def get_tree(width,height,func_latlon_xy,shp):
+    label_tree = np.zeros((height, width), dtype=np.uint8)
 
     for idx, geometry in enumerate(shp.geometry):
         if geometry is None:
@@ -135,17 +134,41 @@ def get_labels_coords(width,height,func_latlon_xy,shp):
             points_xy = [func_latlon_xy(point[0], point[1])
                          for point in points_latlon]
             points_xy = np.array(points_xy, np.int32)[:, ::-1]
-            cv2.fillPoly(label, [points_xy], 1)
+            cv2.fillPoly(label_tree, [points_xy], 1)
 
-    Image.fromarray(label*255)
+    Image.fromarray(label_tree*255)
 
-    return label
+    return label_tree
+
+#get the masks coords
+def get_mask(width,height,func_latlon_xy,shp):
+    label_mask = np.zeros((height, width), dtype=np.uint8)
+
+    for idx, geometry in enumerate(shp.geometry):
+        if geometry is None:
+            continue
+
+        if geometry.geom_type == 'Polygon':
+            polygons = [geometry] 
+        elif geometry.geom_type == 'MultiPolygon':
+            polygons = geometry.geoms
+
+        for polygon in polygons:
+            points_latlon = polygon.exterior.coords[:]
+            points_xy = [func_latlon_xy(point[0], point[1])
+                         for point in points_latlon]
+            points_xy = np.array(points_xy, np.int32)[:, ::-1]
+            cv2.fillPoly(label_mask, [points_xy], 1)
+
+    Image.fromarray(label_mask*255)
+
+    return label_mask
 
 #this function receive a width, height and rgb from tif file, 
 #the rgbs and labels paths, the size of crops ans steps to
 #iou 
 def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, 
-            label_tree,label_mask,label_talhoes, diretorio,pallete): 
+            label_tree,label_mask, diretorio,pallete):
     
     tam_nparray = patch_size*patch_size
     print(tam_nparray)
@@ -162,7 +185,7 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step,
             patch_g = g[x:x+patch_size, y:y+patch_size]
             patch_b = b[x:x+patch_size, y:y+patch_size]
         
-            patch_label = label_tree[x:x+patch_size, y:y+patch_size] + label_talhoes[x:x+patch_size, y:y+patch_size]
+            patch_label = label_tree[x:x+patch_size, y:y+patch_size]
         
             patch_rgb = np.dstack([patch_r, patch_g, patch_b])
             patch_rgb[patch_mask == 0] = [0,0,0]
@@ -176,19 +199,11 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step,
 
             fore = np.sum(patch_label)
             
-            #if(2 in patch_label): #theres more than 1 class (trees and talhoes)
-            #if((fore > 0)): #without aninhed if, unless 1 pixel +
-            Image.fromarray(patch_rgb).save(filename_rgb)
-            img_label = Image.fromarray(patch_label)
-            img_label.putpalette(pallete)
-            img_label.save(filename_label)
-            #else: #just one or no classes on patch
-            #    if ((fore > 0) and (fore < (tam_nparray-1))): #more than 1 pixel + and 1 - in img patch
-            #        Image.fromarray(patch_rgb).save(filename_rgb)
-            #        img_label = Image.fromarray(patch_label)
-            #        img_label.putpalette(pallete)
-            #        img_label.save(filename_label)
-
+            if((fore > 0)): 
+                Image.fromarray(patch_rgb).save(filename_rgb)
+                img_label = Image.fromarray(patch_label)
+                img_label.putpalette(pallete)
+                img_label.save(filename_label)         
             
 
 

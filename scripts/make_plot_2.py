@@ -35,77 +35,60 @@ def main(args):
 
     diretorio_raiz=cfg.dir
 
-    diretorios = [os.path.join(diretorio_raiz, nome) 
-                    for nome in os.listdir(diretorio_raiz) 
-                        if os.path.isdir(os.path.join(diretorio_raiz, nome))
-    ]
+    orto_paths = []
 
-    for diretorio in diretorios:
-        arquivos = os.listdir(diretorio)
+    for file in os.listdir(diretorio_raiz):
+        if file.endswith('.tif'):
+            orto_paths.append(file)
+    
+    #print(orto_paths,'\n',shp_paths,'\n',talhoes_path)
+    #input()
 
-        path_shp_talhoes = ''
-        path_shp_arvores = ''
-        path_shp_mascara = ''
-        path_tif = ''
-
-        np.set_printoptions(threshold=sys.maxsize)
-
-        for arquivo in arquivos:
-            if arquivo.endswith('.shp'):
-                nome_camada, _ = os.path.splitext(arquivo)
-                partes = nome_camada.split('_')
-
-                if 'talhoes' in partes:
-                    path_shp_talhoes = os.path.join(diretorio, arquivo)
-                    print(path_shp_talhoes)
-                elif 'arvores' in partes:
-                    path_shp_arvores = os.path.join(diretorio, arquivo)
-                    print(path_shp_arvores)
-                elif 'mascara' in partes:
-                    path_shp_mascara = os.path.join(diretorio, arquivo)
-                    print(path_shp_mascara)
-
-            elif arquivo.endswith('.tif'):
-                path_tif = os.path.join(diretorio, arquivo)
+    print("---------------------------- Iniciando processamento ---------------------------- ")
+    print(f"Total de ortofotos a serem processadas: {len(orto_paths)}\n")
+    print(orto_paths)
+    for o, orto_path in enumerate(orto_paths):
+        print(f'Processando ortofoto: {(o+1)}/{len(orto_paths)}: {orto_path}')
+        filename_orto = os.path.basename(orto_path)[:-4]
+    
+        field_path = os.path.join(diretorio_raiz, f"{filename_orto}_talhoes.shp")
+        mask_path = os.path.join(diretorio_raiz, f"{filename_orto}_mascara.shp")
+        path_tif = os.path.join(diretorio_raiz, orto_path)
 
         ortofoto = read_file_tif(path_tif)
-
         width = ortofoto.width
         height = ortofoto.height
         n = ortofoto.count
         func_latlon_xy = ortofoto.index
 
-        #print('Largura e Altura: ', (width, height))
-        #print('Num de canais: ', n)
 
-        talhoes = read_file_shp(path_shp_talhoes,ortofoto)
-        arvores = read_file_shp(path_shp_arvores,ortofoto)
-        mascara = read_file_shp(path_shp_mascara,ortofoto)
-
+        talhoes = read_file_shp(field_path,ortofoto)
+        mascara = read_file_shp(mask_path,ortofoto)
+        
         output_dataset_dir = os.path.join(diretorio_raiz, cfg.outputdir)
         path_out_dataset_label = os.path.join(diretorio_raiz, f'{cfg.outputdir}/label')
         path_out_dataset_rgb = os.path.join(diretorio_raiz, f'{cfg.outputdir}/rgb')
-
+        
+        #print(output_dataset_dir,path_out_dataset_label,path_out_dataset_rgb)
+        
         patch_size = cfg.patch_size
         step = cfg.step
         pallete = cfg.pallete
-
+        
         for size in patch_size:
             os.makedirs(os.path.join(output_dataset_dir, f"label/{size}"), exist_ok=True)
             os.makedirs(os.path.join(output_dataset_dir, f"rgb/{size}"), exist_ok=True)
-            
+        
         r = ortofoto.read(1)
         g = ortofoto.read(2)
         b = ortofoto.read(3)
-
-        label_mask = get_labels_coords(width,height, func_latlon_xy,mascara)
-        label_tree = get_labels_coords(width,height, func_latlon_xy,arvores)
-        label_talhoes = get_labels_coords(width,height, func_latlon_xy,talhoes)
+        label_mask = get_label(width,height, func_latlon_xy,mascara)
+        label_talhoes = get_label(width,height, func_latlon_xy,talhoes)
 
         for p, s in zip(patch_size, step):
             print(p,s)
             crop_imgs(width,height,path_out_dataset_label, path_out_dataset_rgb,
-                    r,g,b,p,s,label_tree,label_mask,label_talhoes, diretorio,pallete)
+                    r,g,b,p,s,label_mask,label_talhoes, filename_orto,pallete)
 
 
 #this function read a tif file (ortofoto)
@@ -117,8 +100,8 @@ def read_file_shp(path_shp,orto):
     shp = geopandas.read_file(path_shp)
     return shp.to_crs(orto.crs)
 
-#get the labels shp coords
-def get_labels_coords(width,height,func_latlon_xy,shp):
+#get the masks coords
+def get_label(width,height,func_latlon_xy,shp):
     label = np.zeros((height, width), dtype=np.uint8)
 
     for idx, geometry in enumerate(shp.geometry):
@@ -145,7 +128,7 @@ def get_labels_coords(width,height,func_latlon_xy,shp):
 #the rgbs and labels paths, the size of crops ans steps to
 #iou 
 def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step, 
-            label_tree,label_mask,label_talhoes, diretorio,pallete): 
+            label_mask,label_talhoes, filename_orto,pallete):#, 
     
     tam_nparray = patch_size*patch_size
     print(tam_nparray)
@@ -162,44 +145,31 @@ def crop_imgs(width,height, path_label, path_rgb, r,g,b,patch_size, step,
             patch_g = g[x:x+patch_size, y:y+patch_size]
             patch_b = b[x:x+patch_size, y:y+patch_size]
         
-            patch_label = label_tree[x:x+patch_size, y:y+patch_size] + label_talhoes[x:x+patch_size, y:y+patch_size]
+            patch_label = label_talhoes[x:x+patch_size, y:y+patch_size]
         
             patch_rgb = np.dstack([patch_r, patch_g, patch_b])
             patch_rgb[patch_mask == 0] = [0,0,0]
 
-            nome_camada, _ = os.path.splitext(diretorio)
-            #print(nome_camada)
-            partes = nome_camada.split('/')
-
-            filename_rgb = path_rgb + f'/{patch_size}/{partes[-1]}_patch_{x}_{y}.jpg'
-            filename_label = path_label + f'/{patch_size}/{partes[-1]}_patch_{x}_{y}.png'
+            filename_rgb = path_rgb + f'/{patch_size}/{filename_orto}_patch_{x}_{y}.jpg'
+            #print(filename_rgb)
+            filename_label = path_label + f'/{patch_size}/{filename_orto}_patch_{x}_{y}.png'
+            #print(filename_label)
 
             fore = np.sum(patch_label)
             
             #if(2 in patch_label): #theres more than 1 class (trees and talhoes)
-            #if((fore > 0)): #without aninhed if, unless 1 pixel +
+            #if((fore > 0)): 
             Image.fromarray(patch_rgb).save(filename_rgb)
             img_label = Image.fromarray(patch_label)
             img_label.putpalette(pallete)
             img_label.save(filename_label)
             #else: #just one or no classes on patch
-            #    if ((fore > 0) and (fore < (tam_nparray-1))): #more than 1 pixel + and 1 - in img patch
-            #        Image.fromarray(patch_rgb).save(filename_rgb)
-            #        img_label = Image.fromarray(patch_label)
-            #        img_label.putpalette(pallete)
-            #        img_label.save(filename_label)
+            #if ((fore > 0) and (fore < (tam_nparray-1))): #more than 1 pixel + and 1 - in img patch
+            #    Image.fromarray(patch_rgb).save(filename_rgb)
+            #    img_label = Image.fromarray(patch_label)
+            #    img_label.putpalette(pallete)
+            #    img_label.save(filename_label)
 
-            
-
-
-#TODO call main with argparse -> dir, patch_sizes, step, > 1 pixel 
-
-#IOU score
-
-#detectar as bordas e dilatar ele em um tamanho pre definido
-#entrada somente as bordar para o novo iou
-#quanto maior o elemento estruturante melhor
-#analise melhor das bordas
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
